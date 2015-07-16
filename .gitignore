@@ -21,3 +21,7 @@ Thumbs.db
 /nbproject/
 /build/
 /dist/
+
+# Logs #
+########
+/run/logs/

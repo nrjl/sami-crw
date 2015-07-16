@@ -79,6 +79,9 @@ import sami.proxy.ProxyListenerInt;
 import sami.uilanguage.LocalUiClientServer;
 import sami.uilanguage.UiClientListenerInt;
 
+//import org.ros.RosRun;
+import crw.ros.RosCreatePublisher;
+
 /**
  * @todo Need a flag for autonomous or under human control
  *
@@ -102,6 +105,9 @@ public class BoatProxy extends Thread implements ProxyInt {
     final boolean RECORD_POSE = false;
     // InputEvent generation rates
     final int EVENT_GENERATION_TIMER = 500; // ms
+    // Create a ROS publisher
+    final boolean ROS_PUBLISH = true;
+    
 
     public static final int NUM_SENSOR_PORTS = 4;
     // Identifiers
@@ -129,6 +135,10 @@ public class BoatProxy extends Thread implements ProxyInt {
     PoseListener _stateListener;
     SensorListener _sensorListener;
     WaypointListener _waypointListener;
+    
+    private RosCreatePublisher _rosPublisher;
+    //private RosRun _rosRunner;
+    
     //@todo need to consolidate all these different pose representations
     UtmPose _pose;
     private Position position = null;
@@ -171,6 +181,19 @@ public class BoatProxy extends Thread implements ProxyInt {
             message += ", DRIFT_TIMER: " + DRIFT_TIMER + ", DRIFT_DISTANCE: " + DRIFT_DISTANCE;
         }
         LOGGER.info(message);
+        
+        if (ROS_PUBLISH) {
+            
+            try {
+                _rosPublisher =  new RosCreatePublisher();
+                _rosPublisher.SpawnPublisher();
+                //String[] rospub_class = new String[] {"crw.ros.RosStringPublisher"};
+                //RosRun.main(rospub_class);
+            } catch (Exception ex) {
+                Logger.getLogger(BoatProxy.class.getName()).log(Level.SEVERE, "CREATING ROS PUBLISHER FAILED");
+                Logger.getLogger(BoatProxy.class.getName()).log(Level.SEVERE, null, ex);
+            }            
+        }
 
         if (RECORD_POSE) {
             try {
@@ -241,6 +264,13 @@ public class BoatProxy extends Thread implements ProxyInt {
                 }
 
                 _pose = upwcs.clone();
+                
+                //*
+                if(ROS_PUBLISH) {
+                    //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ROS pose publish update");
+                    _rosPublisher.setPose(_pose);
+                    
+                }//*/
 
                 // System.out.println("Pose: [" + _pose.pose.position.x + ", " + _pose.pose.position.y + "], zone = " + _pose.utm.zone);
                 try {

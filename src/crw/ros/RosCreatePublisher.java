@@ -15,7 +15,6 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMain;
 import org.ros.node.NodeMainExecutor;
 
-import crw.proxy.BoatProxy;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,7 +30,7 @@ public class RosCreatePublisher {
         String[] pubArgv = { "crw.ros.RosPosePublisher" };
         CommandLineLoader pubLoader = new CommandLineLoader(Lists.newArrayList(pubArgv));
         String nodeClassName = pubLoader.getNodeClassName();
-        Logger.getLogger(BoatProxy.class.getName()).log(Level.INFO, "Loading node class: " + pubLoader.getNodeClassName());
+        Logger.getLogger(RosCreatePublisher.class.getName()).log(Level.INFO, "Loading node class: " + pubLoader.getNodeClassName());
         NodeConfiguration pubNodeConfiguration = pubLoader.build();
 
         pubNodeMain = null;

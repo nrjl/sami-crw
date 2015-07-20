@@ -80,7 +80,8 @@ import sami.uilanguage.LocalUiClientServer;
 import sami.uilanguage.UiClientListenerInt;
 
 //import org.ros.RosRun;
-import crw.ros.RosCreatePublisher;
+//import crw.ros.RosCreatePublisher;
+import crw.ros.RosConnect;
 
 /**
  * @todo Need a flag for autonomous or under human control
@@ -136,7 +137,7 @@ public class BoatProxy extends Thread implements ProxyInt {
     SensorListener _sensorListener;
     WaypointListener _waypointListener;
     
-    private RosCreatePublisher _rosPublisher;
+    private RosConnect _rosConnection;
     //private RosRun _rosRunner;
     
     //@todo need to consolidate all these different pose representations
@@ -182,11 +183,10 @@ public class BoatProxy extends Thread implements ProxyInt {
         }
         LOGGER.info(message);
         
-        if (ROS_PUBLISH) {
-            
+        if (ROS_PUBLISH) {            
             try {
-                _rosPublisher =  new RosCreatePublisher();
-                _rosPublisher.SpawnPublisher();
+                _rosConnection =  new RosConnect();
+                _rosConnection.ConnectPubSubs(this);
                 //String[] rospub_class = new String[] {"crw.ros.RosStringPublisher"};
                 //RosRun.main(rospub_class);
             } catch (Exception ex) {
@@ -265,13 +265,6 @@ public class BoatProxy extends Thread implements ProxyInt {
 
                 _pose = upwcs.clone();
                 
-                //*
-                if(ROS_PUBLISH) {
-                    //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ROS pose publish update");
-                    _rosPublisher.setPose(_pose);
-                    
-                }//*/
-
                 // System.out.println("Pose: [" + _pose.pose.position.x + ", " + _pose.pose.position.y + "], zone = " + _pose.utm.zone);
                 try {
 
@@ -298,6 +291,10 @@ public class BoatProxy extends Thread implements ProxyInt {
 
                     for (ProxyListenerInt boatProxyListener : listeners) {
                         boatProxyListener.poseUpdated();
+                    }
+                    
+                    if(ROS_PUBLISH  && _rosConnection != null) {
+                        _rosConnection.setPose(_pose);
                     }
 
                 } catch (Exception e) {

@@ -6,7 +6,6 @@
 package crw.ros;
 
 
-import crw.proxy.BoatProxy;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -29,7 +28,7 @@ public class RosPosePublisher extends AbstractNodeMain {
 
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of("rosjava/crw_pose_pub");
+        return GraphName.of("crw_ros/crw_pose_pub");
     }
 
     @Override
@@ -44,7 +43,7 @@ public class RosPosePublisher extends AbstractNodeMain {
     public void setPose(final UtmPose newpose)
     {
         if (publisher == null) {
-            Logger.getLogger(BoatProxy.class.getName()).log(Level.WARNING, "Publisher null pointer");
+            Logger.getLogger(RosPosePublisher.class.getName()).log(Level.WARNING, "Publisher null pointer");
         }
         else {          
           final double[] newpose_point = newpose.pose.getPosition();

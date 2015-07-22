@@ -23,6 +23,7 @@ public class RosConnect {
 
     private RosGeoPosePublisher pubNodePose;
     private RosWaypointSubscriber subNodeWaypoint;
+    private RosClearWaypointsSubscriber subNodeWaypointClear;
 
     public void ConnectPubSubs(BoatProxy parent_boat) throws Exception {
 
@@ -53,7 +54,7 @@ public class RosConnect {
         assert(pubNodePose != null);
         nodeMainExecutor.execute(pubNodePose, pubNodeConfiguration);
         
-        // Load the subscriber
+        // Load the subscriber               
         String[] subArgv = { "crw.ros.RosWaypointSubscriber" };
         CommandLineLoader subLoader = new CommandLineLoader(Lists.newArrayList(subArgv));
         nodeClassName = subLoader.getNodeClassName();
@@ -61,8 +62,10 @@ public class RosConnect {
         NodeConfiguration subNodeConfiguration = subLoader.build();
 
         subNodeWaypoint = null;
+
         try {
-            subNodeWaypoint = (RosWaypointSubscriber)subLoader.loadClass(nodeClassName);
+          
+         subNodeWaypoint = (RosWaypointSubscriber)subLoader.loadClass(nodeClassName);        
         }
         catch (ClassNotFoundException e) {
             throw new RosRuntimeException("Unable to locate node: " + nodeClassName, e);
@@ -73,14 +76,45 @@ public class RosConnect {
         catch (IllegalAccessException e) {
             throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
         }
-
+     
+          
         assert(subNodeWaypoint != null);
+
         nodeMainExecutor.execute(subNodeWaypoint, subNodeConfiguration);
+        // This allows me to pass the parent boat to the subscriber so that 
+        // messages can be sent to the boat on receiving a ROS waypoint          
+        subNodeWaypoint.setBoatParent(parent_boat);
         
+        
+        
+        //load the waypoint clear subscriber
+        String[] subClearArgv = { "crw.ros.RosClearWaypointsSubscriber" };
+        CommandLineLoader subClearLoader = new CommandLineLoader(Lists.newArrayList(subClearArgv));
+        nodeClassName = subClearLoader.getNodeClassName();
+        Logger.getLogger(RosCreatePublisher.class.getName()).log(Level.INFO, "Loading node class: " + subClearLoader.getNodeClassName());
+        NodeConfiguration subClearNodeConfiguration = subClearLoader.build();
+
+        subNodeWaypointClear = null;
+        try {
+            subNodeWaypointClear = (RosClearWaypointsSubscriber)subClearLoader.loadClass(nodeClassName);
+
+         }
+        catch (ClassNotFoundException e) {
+            throw new RosRuntimeException("Unable to locate node: " + nodeClassName, e);
+        }
+        catch (InstantiationException e) {
+            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
+        }
+        catch (IllegalAccessException e) {
+            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
+        }
+
+        assert(subNodeWaypointClear != null);
+        nodeMainExecutor.execute(subNodeWaypointClear, subClearNodeConfiguration);
         // This allows me to pass the parent boat to the subscriber so that 
         // messages can be sent to the boat on receiving a ROS waypoint        
-        
-        subNodeWaypoint.setBoatParent(parent_boat);
+        subNodeWaypointClear.setBoatParent(parent_boat);
+     
     }
 
     public void setPose(final UtmPose newpose) {

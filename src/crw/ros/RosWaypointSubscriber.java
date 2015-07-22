@@ -32,6 +32,7 @@ public class RosWaypointSubscriber extends AbstractNodeMain {
     private geographic_msgs.GeoPoint ros_geopoint ;
     private geographic_msgs.GeoPose ros_geopose;
     private BoatProxy parent_boat;
+    private final static Object LOCK = new Object();
     
     @Override
     public GraphName getDefaultNodeName() {
@@ -41,14 +42,30 @@ public class RosWaypointSubscriber extends AbstractNodeMain {
     @Override
     public void onStart(ConnectedNode connectedNode) {
         parent_boat = null;
+        synchronized (LOCK) {
         subscriber = connectedNode.newSubscriber("crw_waypoint_sub", geographic_msgs.GeoPose._TYPE);
+        //now that subscriber is no longer 'null' exit the while loop    
+         LOCK.notifyAll();
+        }
         ros_geopose = connectedNode.getTopicMessageFactory().newFromType(geographic_msgs.GeoPose._TYPE);
         ros_geopoint = ros_geopose.getPosition();
     }
 
     public void setBoatParent(final BoatProxy parent_boat) {
-        while(subscriber == null) {
-             Logger.getLogger(RosWaypointSubscriber.class.getName()).log(Level.INFO, "Waiting for subsriber to link.");}
+    //synchronization allows the program to wait while the subscriber is instantiated to continue
+     synchronized (LOCK) {
+      while (subscriber == null) {
+       try {
+           LOCK.wait();
+         } catch (InterruptedException x) {
+          break;}
+         }
+       }
+       
+      /*while(subscriber == null) {
+        Logger.getLogger(RosWaypointSubscriber.class.getName()).log(Level.INFO, "Waiting for subsriber to link.");}
+       */
+
         this.parent_boat = parent_boat;
         subscriber.addMessageListener(new MessageListener<geographic_msgs.GeoPose>() {
         @Override
@@ -79,4 +96,7 @@ public class RosWaypointSubscriber extends AbstractNodeMain {
         waypoint_event.setProxyPoints(proxy_table);
         parent_boat.handleEvent(waypoint_event, null);
     }
+    
+    public Object getLOCK(){
+    return LOCK;}
 }

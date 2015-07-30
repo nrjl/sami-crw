@@ -5,6 +5,7 @@
  */
 package crw.ros;
 
+import crw.event.output.proxy.ProxyEmergencyAbort;
 import crw.event.output.proxy.ProxyGotoPoint;
 import crw.proxy.BoatProxy;
 import org.apache.commons.logging.Log;
@@ -73,10 +74,15 @@ public class RosClearWaypointsSubscriber extends AbstractNodeMain {
                 Logger.getLogger(RosClearWaypointsSubscriber.class.getName()).log(Level.WARNING, "No parent boat assigned, waypoint ignored!");
             }
             else if(message.getData().equalsIgnoreCase("clear")) {
-            updateWaypoint();
-            //displaying the 'clear' message in the logger for verification
-            Logger.getLogger(RosClearWaypointsSubscriber.class.getName()).log(Level.INFO, "Message Recieved: " + message.getData());
-
+                updateWaypoint();
+                //displaying the 'clear' message in the logger for verification
+                Logger.getLogger(RosClearWaypointsSubscriber.class.getName()).log(Level.INFO, "Message Recieved: " + message.getData());
+            }
+            else if(message.getData().equalsIgnoreCase("abort")) {
+                ProxyEmergencyAbort waypoint_event = new ProxyEmergencyAbort();
+                parent_boat.handleEvent(waypoint_event, null);
+                //displaying the 'clear' message in the logger for verification
+                Logger.getLogger(RosClearWaypointsSubscriber.class.getName()).log(Level.INFO, "Message Recieved: " + message.getData());
             }
         }
         });
@@ -85,7 +91,14 @@ public class RosClearWaypointsSubscriber extends AbstractNodeMain {
     public void updateWaypoint() {
     //Abort the current Output Event, for waypoint following this OE is ProxyGotoPoint 
         OutputEvent remove = parent_boat.getCurrentEvent();
-        UUID id = remove.getId();
-        parent_boat.abortEvent(id);
+        if (remove == null) {
+            Logger.getLogger(RosClearWaypointsSubscriber.class.getName()).log(Level.INFO, "No current events found, nothing to clear.");
+        }
+        else {
+            Logger.getLogger(RosClearWaypointsSubscriber.class.getName()).log(Level.INFO, "Clearing current event of type: " + remove.toString());
+            UUID id = remove.getId();
+            parent_boat.abortEvent(id);
+        }
+        
     }
 }

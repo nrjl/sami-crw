@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 public class RosConnect {
 
     private RosGeoPosePublisher pubNodePose;
+    private RosWaypointReached pubNodeWaypointReached;
     private RosWaypointSubscriber subNodeWaypoint;
     private RosClearWaypointsSubscriber subNodeWaypointClear;
 
@@ -54,6 +55,30 @@ public class RosConnect {
         assert(pubNodePose != null);
         nodeMainExecutor.execute(pubNodePose, pubNodeConfiguration);
         
+        // Load the publisher
+        String[] pubArgv2 = {"crw.ros.RosWaypointReached"};
+        pubLoader = new CommandLineLoader(Lists.newArrayList(pubArgv2));
+        nodeClassName = pubLoader.getNodeClassName();
+        Logger.getLogger(RosCreatePublisher.class.getName()).log(Level.INFO, "Loading node class: " + pubLoader.getNodeClassName());
+        pubNodeConfiguration = pubLoader.build();
+
+        pubNodeWaypointReached = null;
+        try {
+            pubNodeWaypointReached = (RosWaypointReached)pubLoader.loadClass(nodeClassName);
+        }
+        catch (ClassNotFoundException e) {
+            throw new RosRuntimeException("Unable to locate node: " + nodeClassName, e);
+        }
+        catch (InstantiationException e) {
+            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
+        }
+        catch (IllegalAccessException e) {
+            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
+        }
+        assert(pubNodeWaypointReached != null);
+        nodeMainExecutor.execute(pubNodeWaypointReached, pubNodeConfiguration);
+        
+
         // Load the subscriber               
         String[] subArgv = { "crw.ros.RosWaypointSubscriber" };
         CommandLineLoader subLoader = new CommandLineLoader(Lists.newArrayList(subArgv));
@@ -122,4 +147,8 @@ public class RosConnect {
         pubNodePose.setPose(newpose);
     }
     
+    public void arrivedAtWaypoint(final UtmPose newpose) {
+        assert(pubNodeWaypointReached != null);
+        pubNodeWaypointReached.setPose(newpose);
+    }
 }

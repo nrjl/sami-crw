@@ -1010,7 +1010,9 @@ public class BoatProxy extends Thread implements ProxyInt {
             curSequentialEvent = null;
 
             if (sequentialOutputEvents.isEmpty()) {
-                // Have no events to process
+                if(ROS_PUBLISH  && _rosConnection != null) {
+                    _rosConnection.arrivedAtWaypoint(_pose);
+                }
                 LOGGER.fine("Proxy [" + this + "] has no current WP, sequentialOutputEvents is empty");
             } else if (currentTask != null && oeToTask.get(sequentialOutputEvents.get(0)) != currentTask) {
                 // First event doesn't belong to current event
@@ -1127,6 +1129,7 @@ public class BoatProxy extends Thread implements ProxyInt {
             }
         }
 
+        // LOGGER.info("End of updateWaypoints!");
         // Notify listeners
         for (ProxyListenerInt boatProxyListener : listeners) {
             boatProxyListener.waypointsUpdated();

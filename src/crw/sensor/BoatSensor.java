@@ -198,5 +198,6 @@ public class BoatSensor implements ObserverInt, SensorListener {
         for (ObservationListenerInt listener : listeners) {
             listener.newObservation(obs);
         }
+        LOGGER.log(Level.INFO, "receivedSensor routine called. Source: "+obs.source+", Variable: "+obs.variable+", Value: "+obs.value);
     }
 }

@@ -937,6 +937,7 @@ public class BoatProxy extends Thread implements ProxyInt {
 
         // @todo This only allows one sensor, generalize (but I think this is only for the fake data ...)
         _sensorListener = l;
+        LOGGER.log(Level.INFO, "Setting SENSOR LISTENER TO: " + l);
 
         // System.out.println("Setting SENSOR LISTENER TO: " + l);
     }

@@ -23,7 +23,7 @@ import sami.CoreHelper;
 public class BoatSensor implements ObserverInt, SensorListener {
 
     private static final Logger LOGGER = Logger.getLogger(BoatSensor.class.getName());
-    private final boolean GENERATE_FAKE_DATA = false;
+    private final boolean GENERATE_FAKE_DATA = true;
     BoatProxy proxy;
     int channel;
     ArrayList<ObservationListenerInt> listeners = new ArrayList<ObservationListenerInt>();
@@ -47,7 +47,8 @@ public class BoatSensor implements ObserverInt, SensorListener {
     public BoatSensor(final BoatProxy proxy, int channel) {
         this.proxy = proxy;
         this.channel = channel;
-        proxy.getVehicleServer().addSensorListener(channel, this, null);
+        //LOGGER.log(Level.INFO, "Boat sensor being added for boat proxy "+proxy.getProxyName()+", vehicle server "+proxy.getVehicleServer().toString()+" on channel "+channel);
+        //proxy.getVehicleServer().addSensorListener(channel, this, null);
 
         // Cheating dummy data, another version of this is in SimpleBoatSimulator, 
         // effectively overridden by overridding addSensorListener in FastSimpleBoatSimulator
@@ -199,5 +200,6 @@ public class BoatSensor implements ObserverInt, SensorListener {
             listener.newObservation(obs);
         }
         LOGGER.log(Level.INFO, "receivedSensor routine called. Source: "+obs.source+", Variable: "+obs.variable+", Value: "+obs.value);
+        this.proxy.publishSensorData(sd);
     }
 }

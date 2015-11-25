@@ -22,16 +22,97 @@ import java.util.logging.Logger;
 public class RosConnect {
 
     private RosGeoPosePublisher pubNodePose;
+    private RosDepthSensorPublisher pubNodeDepth;
     private RosWaypointReached pubNodeWaypointReached;
     private RosWaypointSubscriber subNodeWaypoint;
     private RosClearWaypointsSubscriber subNodeWaypointClear;
+    
+    private class NodeObject{
+        public NodeMain node;
+        public NodeConfiguration config;
+        
+        public NodeObject(NodeMain node, NodeConfiguration config){
+            this.node = node;
+            this.config = config;
+        }
+    }
+    
+    private NodeObject GetNodeLoader(String pubArg) {
+        String[] pubArgv = new String[] {pubArg};
+        CommandLineLoader pubLoader = new CommandLineLoader(Lists.newArrayList(pubArgv));
+        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loading node class: " + pubLoader.getNodeClassName());
+        NodeMain nodeOut = null;
+        try {
+            nodeOut = pubLoader.loadClass(pubLoader.getNodeClassName());
+        }
+        catch (ClassNotFoundException e) {
+            throw new RosRuntimeException("Unable to locate node: " + pubLoader.getNodeClassName(), e);
+        }
+        catch (InstantiationException e) {
+            throw new RosRuntimeException("Unable to instantiate node: " + pubLoader.getNodeClassName(), e);
+        }
+        catch (IllegalAccessException e) {
+            throw new RosRuntimeException("Unable to instantiate node: " + pubLoader.getNodeClassName(), e);
+        }
+        assert(nodeOut != null);
+        NodeObject nodeObject = new NodeObject(nodeOut, pubLoader.build());
+        return nodeObject;
+    }
 
     public void ConnectPubSubs(BoatProxy parent_boat) throws Exception {
-
         // Set up the executor for nodes
         NodeMainExecutor nodeMainExecutor = DefaultNodeMainExecutor.newDefault();
+        
+        // Load GeoPose publisher
+        NodeObject nodePose = GetNodeLoader("crw.ros.RosGeoPosePublisher");
+        pubNodePose = (RosGeoPosePublisher) nodePose.node;
+        nodeMainExecutor.execute(pubNodePose, nodePose.config);
+        
+        // Load Depth Sensor publisher
+        NodeObject nodeDepth = GetNodeLoader("crw.ros.RosDepthSensorPublisher");
+        pubNodeDepth = (RosDepthSensorPublisher) nodeDepth.node;
+        nodeMainExecutor.execute(pubNodeDepth, nodeDepth.config);
+        
+        // Load WaypointReached publisher
+        NodeObject nodeWaypointReached = GetNodeLoader("crw.ros.RosWaypointReached");
+        pubNodeWaypointReached = (RosWaypointReached) nodeWaypointReached.node;
+        nodeMainExecutor.execute(pubNodeWaypointReached, nodeWaypointReached.config);
 
-        // Load the publisher
+        // Load the waypoint subscriber
+        NodeObject nodeWaypoint = GetNodeLoader("crw.ros.RosWaypointSubscriber");
+        subNodeWaypoint = (RosWaypointSubscriber) nodeWaypoint.node;
+        nodeMainExecutor.execute(subNodeWaypoint, nodeWaypoint.config);
+
+        // This allows passing the parent boat to the subscriber so that 
+        // messages can be sent to the boat on receiving a ROS waypoint          
+        subNodeWaypoint.setBoatParent(parent_boat);                
+        
+        //load the waypoint clear subscriber
+        NodeObject nodeClear = GetNodeLoader("crw.ros.RosClearWaypointsSubscriber");
+        subNodeWaypointClear = (RosClearWaypointsSubscriber) nodeClear.node;
+        nodeMainExecutor.execute(subNodeWaypointClear, nodeClear.config);
+        subNodeWaypointClear.setBoatParent(parent_boat);  
+    }
+
+    public void setPose(final UtmPose newpose) {
+        assert(pubNodePose != null);
+        pubNodePose.setPose(newpose);
+    }
+    
+    public void arrivedAtWaypoint(final UtmPose newpose) {
+        assert(pubNodeWaypointReached != null);
+        pubNodeWaypointReached.setPose(newpose);
+    }
+    
+    public void setDepth(final float depth) {
+        assert(pubNodeDepth != null);
+        pubNodeDepth.setDepth(depth);
+    }
+}
+
+
+/*
+        // Load GeoPose publisher
         String[] pubArgv = { "crw.ros.RosGeoPosePublisher" };
         CommandLineLoader pubLoader = new CommandLineLoader(Lists.newArrayList(pubArgv));
         String nodeClassName = pubLoader.getNodeClassName();
@@ -55,34 +136,10 @@ public class RosConnect {
         assert(pubNodePose != null);
         nodeMainExecutor.execute(pubNodePose, pubNodeConfiguration);
         
-        // Load the publisher
-        String[] pubArgv2 = {"crw.ros.RosWaypointReached"};
-        pubLoader = new CommandLineLoader(Lists.newArrayList(pubArgv2));
-        nodeClassName = pubLoader.getNodeClassName();
-        Logger.getLogger(RosCreatePublisher.class.getName()).log(Level.INFO, "Loading node class: " + pubLoader.getNodeClassName());
-        pubNodeConfiguration = pubLoader.build();
 
-        pubNodeWaypointReached = null;
-        try {
-            pubNodeWaypointReached = (RosWaypointReached)pubLoader.loadClass(nodeClassName);
-        }
-        catch (ClassNotFoundException e) {
-            throw new RosRuntimeException("Unable to locate node: " + nodeClassName, e);
-        }
-        catch (InstantiationException e) {
-            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
-        }
-        catch (IllegalAccessException e) {
-            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
-        }
-        assert(pubNodeWaypointReached != null);
-        nodeMainExecutor.execute(pubNodeWaypointReached, pubNodeConfiguration);
-        
-
-        // Load the subscriber               
         String[] subArgv = { "crw.ros.RosWaypointSubscriber" };
         CommandLineLoader subLoader = new CommandLineLoader(Lists.newArrayList(subArgv));
-        nodeClassName = subLoader.getNodeClassName();
+        String nodeClassName = subLoader.getNodeClassName();
         Logger.getLogger(RosCreatePublisher.class.getName()).log(Level.INFO, "Loading node class: " + subLoader.getNodeClassName());
         NodeConfiguration subNodeConfiguration = subLoader.build();
 
@@ -109,46 +166,5 @@ public class RosConnect {
         // This allows me to pass the parent boat to the subscriber so that 
         // messages can be sent to the boat on receiving a ROS waypoint          
         subNodeWaypoint.setBoatParent(parent_boat);
-        
-        
-        
-        //load the waypoint clear subscriber
-        String[] subClearArgv = { "crw.ros.RosClearWaypointsSubscriber" };
-        CommandLineLoader subClearLoader = new CommandLineLoader(Lists.newArrayList(subClearArgv));
-        nodeClassName = subClearLoader.getNodeClassName();
-        Logger.getLogger(RosCreatePublisher.class.getName()).log(Level.INFO, "Loading node class: " + subClearLoader.getNodeClassName());
-        NodeConfiguration subClearNodeConfiguration = subClearLoader.build();
 
-        subNodeWaypointClear = null;
-        try {
-            subNodeWaypointClear = (RosClearWaypointsSubscriber)subClearLoader.loadClass(nodeClassName);
-
-         }
-        catch (ClassNotFoundException e) {
-            throw new RosRuntimeException("Unable to locate node: " + nodeClassName, e);
-        }
-        catch (InstantiationException e) {
-            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
-        }
-        catch (IllegalAccessException e) {
-            throw new RosRuntimeException("Unable to instantiate node: " + nodeClassName, e);
-        }
-
-        assert(subNodeWaypointClear != null);
-        nodeMainExecutor.execute(subNodeWaypointClear, subClearNodeConfiguration);
-        // This allows me to pass the parent boat to the subscriber so that 
-        // messages can be sent to the boat on receiving a ROS waypoint        
-        subNodeWaypointClear.setBoatParent(parent_boat);
-     
-    }
-
-    public void setPose(final UtmPose newpose) {
-        assert(pubNodePose != null);
-        pubNodePose.setPose(newpose);
-    }
-    
-    public void arrivedAtWaypoint(final UtmPose newpose) {
-        assert(pubNodeWaypointReached != null);
-        pubNodeWaypointReached.setPose(newpose);
-    }
-}
+*/

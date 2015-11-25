@@ -320,7 +320,9 @@ public class ProxyEventHandler implements EventHandlerInt, ProxyListenerInt, Inf
             // Connect to a non-simulated proxy
             ConnectExistingProxy connectEvent = (ConnectExistingProxy) oe;
             ProxyInt proxy = Engine.getInstance().getProxyServer().createProxy(connectEvent.name, connectEvent.color, CrwNetworkUtils.toInetSocketAddress(connectEvent.server));
-            ImagePanel.setImagesDirectory(connectEvent.imageStorageDirectory);
+            //ImagePanel.setImagesDirectory(connectEvent.imageStorageDirectory);
+            // NICK: For some reason this^ never works (UI does not create prompt box) so set manually
+            ImagePanel.setImagesDirectory("run/img/");
             if (proxy != null) {
                 ProxyCreated proxyCreated = new ProxyCreated(oe.getId(), oe.getMissionId(), proxy);
                 ArrayList<GeneratedEventListenerInt> listenersCopy = (ArrayList<GeneratedEventListenerInt>) listeners.clone();

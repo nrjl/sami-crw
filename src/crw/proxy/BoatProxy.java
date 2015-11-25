@@ -19,6 +19,7 @@ import edu.cmu.ri.crw.WaypointListener;
 import edu.cmu.ri.crw.data.Twist;
 import edu.cmu.ri.crw.data.Utm;
 import edu.cmu.ri.crw.data.UtmPose;
+import edu.cmu.ri.crw.data.SensorData;
 import edu.cmu.ri.crw.udp.UdpVehicleServer;
 import gov.nasa.worldwind.avlist.AVKey;
 import gov.nasa.worldwind.geom.LatLon;
@@ -81,7 +82,10 @@ import sami.uilanguage.UiClientListenerInt;
 
 //import org.ros.RosRun;
 //import crw.ros.RosCreatePublisher;
+import edu.cmu.ri.crw.VehicleServer;
 import crw.ros.RosConnect;
+
+
 
 /**
  * @todo Need a flag for autonomous or under human control
@@ -937,8 +941,17 @@ public class BoatProxy extends Thread implements ProxyInt {
 
         // @todo This only allows one sensor, generalize (but I think this is only for the fake data ...)
         _sensorListener = l;
+        
         LOGGER.log(Level.INFO, "Setting SENSOR LISTENER TO: " + l);
-
+//        _server.getSensorType(channel, new FunctionObserver<VehicleServer.SensorType>(){
+//            @Override public void completed(VehicleServer.SensorType sens_type) {
+//                    LOGGER.log(Level.INFO, "Get sensor type succeeded: " + sens_type.toString());
+//                }
+//            @Override public void failed(FunctionObserver.FunctionError fe) {
+//                    LOGGER.log(Level.SEVERE, "Get sensor type failed!");
+//                }
+//            });
+       
         // System.out.println("Setting SENSOR LISTENER TO: " + l);
     }
 
@@ -1137,6 +1150,11 @@ public class BoatProxy extends Thread implements ProxyInt {
         }
     }
 
+    public void publishSensorData(SensorData sd) {
+        if(ROS_PUBLISH  && _rosConnection != null && sd.type == VehicleServer.SensorType.DEPTH ) {
+            _rosConnection.setDepth((float) sd.data[0]);
+        }
+    }
     /**
      * Takes in an output event: if the current sequential output event has the
      * same UUID, it is replaced with the passed in event: if not, it is

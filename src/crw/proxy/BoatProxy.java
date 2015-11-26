@@ -1151,8 +1151,19 @@ public class BoatProxy extends Thread implements ProxyInt {
     }
 
     public void publishSensorData(SensorData sd) {
-        if(ROS_PUBLISH  && _rosConnection != null && sd.type == VehicleServer.SensorType.DEPTH ) {
-            _rosConnection.setDepth((float) sd.data[0]);
+        if(ROS_PUBLISH  && _rosConnection != null) {
+            switch (sd.type) {
+                case DEPTH:
+                    _rosConnection.setDepth((float) sd.data[0]);
+                    break;
+                    
+                case TE:
+                case UNKNOWN:
+                    _rosConnection.setTemp((float) sd.data[0]);
+                    break;
+                default:
+                    LOGGER.log(Level.WARNING, "No ROS publisher associated with sensor type: {0}", sd.type.toString());
+            }
         }
     }
     /**

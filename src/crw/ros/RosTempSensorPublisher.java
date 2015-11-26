@@ -17,33 +17,30 @@ import java.util.logging.Logger;
  *
  * @author nick
  */
-public class RosDepthSensorPublisher extends AbstractNodeMain {
+public class RosTempSensorPublisher extends AbstractNodeMain {
 
-    private Publisher<sensor_msgs.Range> publisher; 
-    private sensor_msgs.Range range_msg;
+    private Publisher<sensor_msgs.Temperature> publisher; 
+    private sensor_msgs.Temperature temp_msg;
     private std_msgs.Header header;
     private ConnectedNode node_master;
     private static int sequence=0;
 
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of("crw_ros/crw_sonar_pub");
+        return GraphName.of("crw_ros/crw_temp_pub");
     }
 
     @Override
     public void onStart(final ConnectedNode connectedNode) {
-        publisher = connectedNode.newPublisher("crw_sonar_pub", sensor_msgs.Range._TYPE);
+        publisher = connectedNode.newPublisher("crw_temp_pub", sensor_msgs.Temperature._TYPE);
         node_master = connectedNode;
-        range_msg = publisher.newMessage();
-        range_msg.setRadiationType((byte) 0);
-        range_msg.setFieldOfView((float) 5.0);
-        range_msg.setMaxRange((float) 100.0);
-        range_msg.setMinRange((float) 0.5);
-        header = range_msg.getHeader();
-        header.setFrameId("sonar");        
+        temp_msg = publisher.newMessage();
+        temp_msg.setVariance( 0.04);
+        header = temp_msg.getHeader();
+        header.setFrameId("sonar");  
     }
 
-    public void setDepth(final float rangeData)
+    public void setTemp(final float tempData)
     {
         if (publisher == null) {
             Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Publisher null pointer");
@@ -51,12 +48,12 @@ public class RosDepthSensorPublisher extends AbstractNodeMain {
         else {
             header.setSeq(sequence);
             header.setStamp(node_master.getCurrentTime());
-            // range_msg.setHeader(header);
+            // temp_msg.setHeader(header);
             
-            range_msg.setRange(rangeData);
+            temp_msg.setTemperature(tempData);
             
             sequence = sequence+1;
-            publisher.publish(range_msg);
+            publisher.publish(temp_msg);
         }
     }
 }

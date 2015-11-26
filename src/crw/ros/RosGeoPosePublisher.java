@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class RosGeoPosePublisher extends AbstractNodeMain {
 
     private Publisher<geographic_msgs.GeoPose> publisher;
-    private geographic_msgs.GeoPoint ros_geopoint ;
+    private geographic_msgs.GeoPoint geopoint_msg ;
     private geometry_msgs.Quaternion ros_quat;
     private geographic_msgs.GeoPose ros_geopose;
     
@@ -37,14 +37,14 @@ public class RosGeoPosePublisher extends AbstractNodeMain {
     public void onStart(final ConnectedNode connectedNode) {
         publisher = connectedNode.newPublisher("crw_geopose_pub", geographic_msgs.GeoPose._TYPE);
         ros_geopose = publisher.newMessage();        
-        ros_geopoint = ros_geopose.getPosition();
+        geopoint_msg = ros_geopose.getPosition();
         ros_quat  = ros_geopose.getOrientation();
     }
 
     public void setPose(final UtmPose newpose)
     {
         if (publisher == null) {
-            Logger.getLogger(RosPosePublisher.class.getName()).log(Level.WARNING, "Publisher null pointer");
+            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Publisher null pointer");
         }
         else {
             int longZone = newpose.origin.zone;
@@ -57,9 +57,9 @@ public class RosGeoPosePublisher extends AbstractNodeMain {
             // Fill in UTM data structure
             UTMCoord boatPos = UTMCoord.fromUTM(longZone, wwHemi, newpose.pose.getX(), newpose.pose.getY());
             
-            ros_geopoint.setLatitude(boatPos.getLatitude().degrees);
-            ros_geopoint.setLongitude(boatPos.getLongitude().degrees);
-            ros_geopoint.setAltitude(0);
+            geopoint_msg.setLatitude(boatPos.getLatitude().degrees);
+            geopoint_msg.setLongitude(boatPos.getLongitude().degrees);
+            geopoint_msg.setAltitude(0);
 
             final robotutils.Quaternion newpose_quat = newpose.pose.getRotation();
             ros_quat.setX(newpose_quat.getX());
@@ -67,7 +67,7 @@ public class RosGeoPosePublisher extends AbstractNodeMain {
             ros_quat.setZ(newpose_quat.getZ());
             ros_quat.setW(newpose_quat.getW());
 
-            ros_geopose.setPosition(ros_geopoint);
+            ros_geopose.setPosition(geopoint_msg);
             ros_geopose.setOrientation(ros_quat);
 
             publisher.publish(ros_geopose);

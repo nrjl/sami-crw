@@ -23,6 +23,7 @@ public class RosConnect {
 
     private RosGeoPosePublisher pubNodePose;
     private RosDepthSensorPublisher pubNodeDepth;
+    private RosTempSensorPublisher pubNodeTemp;
     private RosWaypointReached pubNodeWaypointReached;
     private RosWaypointSubscriber subNodeWaypoint;
     private RosClearWaypointsSubscriber subNodeWaypointClear;
@@ -73,6 +74,11 @@ public class RosConnect {
         pubNodeDepth = (RosDepthSensorPublisher) nodeDepth.node;
         nodeMainExecutor.execute(pubNodeDepth, nodeDepth.config);
         
+        // Load Temperature sensor publisher
+        NodeObject nodeTemp = GetNodeLoader("crw.ros.RosTempSensorPublisher");
+        pubNodeTemp = (RosTempSensorPublisher) nodeTemp.node;
+        nodeMainExecutor.execute(pubNodeTemp, nodeTemp.config);        
+        
         // Load WaypointReached publisher
         NodeObject nodeWaypointReached = GetNodeLoader("crw.ros.RosWaypointReached");
         pubNodeWaypointReached = (RosWaypointReached) nodeWaypointReached.node;
@@ -107,6 +113,11 @@ public class RosConnect {
     public void setDepth(final float depth) {
         assert(pubNodeDepth != null);
         pubNodeDepth.setDepth(depth);
+    }
+    
+    public void setTemp(final float temp) {
+        assert(pubNodeTemp != null);
+        pubNodeTemp.setTemp(temp);
     }
 }
 

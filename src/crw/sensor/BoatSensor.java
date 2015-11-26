@@ -60,7 +60,7 @@ public class BoatSensor implements ObserverInt, SensorListener {
 
                 public void run() {
 
-                    LOGGER.info("Generating fake sensor data for " + proxy);
+                    LOGGER.log(Level.INFO, "Generating fake sensor data for {0}", proxy);
 
                     while (true) {
 
@@ -74,7 +74,7 @@ public class BoatSensor implements ObserverInt, SensorListener {
                             if (CoreHelper.RANDOM.nextBoolean()) {
                                 sd.type = VehicleServer.SensorType.TE;
                             } else {
-                                sd.type = VehicleServer.SensorType.UNKNOWN;
+                                sd.type = VehicleServer.SensorType.DEPTH;
                             }
 
                             sd.data = new double[4];
